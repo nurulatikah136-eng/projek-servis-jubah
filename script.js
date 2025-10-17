@@ -1,8 +1,13 @@
 // js/script.js
 
+// 🛑 KONFIGURASI TOYYIBPAY TELAH DIKEMASKINI DENGAN NILAI SEBENAR ANDA
+const TOYYIBPAY_CATEGORY_CODE = 'pbud1r05'; 
+const WEBSITE_BASE_URL = 'https://projek-servis-jubah.web.app/'; // URL Firebase Hosting anda
+// 🛑 TAMAT KONFIGURASI
+
 document.addEventListener('DOMContentLoaded', function() {
     
-    // Simpan data dalam localStorage untuk dihantar antara halaman
+    // Fungsi untuk menyimpan data dalam localStorage (untuk hantar antara halaman)
     const saveToLocalStorage = (key, data) => {
         localStorage.setItem(key, JSON.stringify(data));
     };
@@ -20,19 +25,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const serviceOptions = document.querySelectorAll('.service-option');
         const totalPriceEl = document.getElementById('total-price');
 
-        // Kemas kini harga apabila pilihan servis berubah
         serviceForm.addEventListener('change', (e) => {
             if (e.target.name === 'service') {
                 const price = parseFloat(e.target.value).toFixed(2);
                 totalPriceEl.textContent = price;
 
-                // Highlight pilihan yang aktif
                 serviceOptions.forEach(opt => opt.classList.remove('selected'));
                 e.target.closest('.service-option').classList.add('selected');
             }
         });
 
-        // Apabila form diserahkan, simpan data dan pergi ke halaman seterusnya
         serviceForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const selectedService = serviceForm.querySelector('input[name="service"]:checked');
@@ -58,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const infoForm = document.getElementById('info-form');
         const uploadAreas = document.querySelectorAll('.file-upload-area');
 
-        // Logik untuk muat naik fail (drag & drop) - KEKAL SAMA
+        // Logik untuk muat naik fail (drag & drop)
         uploadAreas.forEach(area => {
             const fileInput = area.querySelector('.file-input');
             const statusEl = document.getElementById(`status-${area.id.split('-')[1]}`);
@@ -111,43 +113,31 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 10);
         }
         
-        // FUNGSI SUBMIT BORANG YANG DIKEMAS KINI UNTUK FIREBASE
+        // FUNGSI SUBMIT BORANG
         infoForm.addEventListener('submit', async (e) => {
             e.preventDefault();
         
-            // Dapatkan butang submit untuk memaparkan status 'loading'
             const submitBtn = infoForm.querySelector('button[type="submit"]');
             submitBtn.disabled = true;
             submitBtn.textContent = 'Menghantar...';
         
             try {
-                // Kumpul semua data dari borang
                 const formData = {
                     fullName: document.getElementById('full-name').value,
                     matricNo: document.getElementById('matric-no').value,
                     phoneNo: document.getElementById('phone-no').value,
+                    fakulti: document.getElementById('fakulti').value, 
                     address: document.getElementById('address').value,
                     deliveryTime: document.getElementById('delivery-time').value,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp() // Tambah tarikh & masa tempahan
                 };
                 
-                // Dapatkan maklumat servis yang dipilih dari localStorage
-                const orderDetails = getFromLocalStorage('orderDetails');
+                // Pilihan: uncomment logik Firebase di sini jika anda sudah yakin konfigurasi anda betul
+                // const orderDetails = getFromLocalStorage('orderDetails');
+                // const finalOrderData = { ...formData, ...orderDetails }; 
+                // await db.collection("tempahan").add(finalOrderData);
         
-                // Gabungkan kedua-dua data
-                const finalOrderData = { ...formData, ...orderDetails };
-        
-                // Hantar data ke Firestore!
-                // Ini akan mencipta satu "collection" bernama "tempahan"
-                await db.collection("tempahan").add(finalOrderData);
-        
-                // Maklumkan pengguna ia berjaya
-                alert("Tempahan berjaya dihantar!");
-        
-                // Simpan data untuk halaman semakan (masih guna localStorage untuk ini)
                 saveToLocalStorage('formData', formData);
                 
-                // Simpan nama fail (simulasi) untuk halaman semakan
                 const uploadedFileNames = {
                     file1: document.querySelector('[name="file1"]').files[0]?.name || 'Borang Semakan.pdf',
                     file2: document.querySelector('[name="file2"]').files[0]?.name || 'Slip Tempahan.pdf',
@@ -156,33 +146,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
                 saveToLocalStorage('fileNames', uploadedFileNames);
 
-                // Teruskan ke halaman seterusnya
                 window.location.href = 'semak-pesanan.html';
         
             } catch (error) {
-                // Jika ada ralat, paparkannya
                 console.error("Ralat semasa menghantar tempahan: ", error);
-                alert("Maaf, berlaku ralat semasa menghantar tempahan anda. Sila cuba lagi.");
+                alert("Maaf, berlaku ralat semasa menghantar tempahan anda. Sila semak semula konfigurasi.");
                 
-                // Aktifkan semula butang
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Semak Maklumat → Page 4';
             }
         });
     }
 
-    // ===============================================
-    // LOGIK UNTUK HALAMAN 4: SEMAK PESANAN
-    // ===============================================
+    // =======================================================
+    // LOGIK UNTUK HALAMAN 4: SEMAK PESANAN (Memulakan ToyyibPay)
+    // =======================================================
     if (document.getElementById('confirmation-form')) {
         const orderDetails = getFromLocalStorage('orderDetails');
+        const formData = getFromLocalStorage('formData'); 
         const fileNames = getFromLocalStorage('fileNames');
         
+        // Paparkan Data Borang (Personal & Delivery Info)
+        if (formData) {
+            document.getElementById('summary-name').textContent = formData.fullName;
+            document.getElementById('summary-matric').textContent = formData.matricNo;
+            document.getElementById('summary-phone').textContent = formData.phoneNo;
+            document.getElementById('summary-fakulti').textContent = formData.fakulti;
+            document.getElementById('summary-address').textContent = formData.address;
+            document.getElementById('summary-delivery').textContent = formData.deliveryTime;
+        }
+
+        // Paparkan Data Servis & Harga
         if (orderDetails) {
             document.getElementById('selected-service').textContent = orderDetails.serviceText;
             document.getElementById('final-price').textContent = `RM ${parseFloat(orderDetails.price).toFixed(2)}`;
         }
 
+        // Paparkan Status Muat Naik Dokumen
         if (fileNames) {
             const fileList = document.getElementById('uploaded-files');
             fileList.innerHTML = `
@@ -192,10 +192,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 <li>✅ ${fileNames.file4}</li>
             `;
         }
-
-
+        
         const confirmCheckbox = document.getElementById('confirm-checkbox');
         const paymentBtn = document.getElementById('payment-btn');
+
+        if (paymentBtn) { 
+            paymentBtn.disabled = true; 
+        }
 
         confirmCheckbox.addEventListener('change', () => {
             paymentBtn.disabled = !confirmCheckbox.checked;
@@ -203,24 +206,57 @@ document.addEventListener('DOMContentLoaded', function() {
         
         document.getElementById('confirmation-form').addEventListener('submit', (e) => {
             e.preventDefault();
-            if (confirmCheckbox.checked) {
-                window.location.href = 'pembayaran.html';
+            if (confirmCheckbox.checked && formData && orderDetails) {
+                
+                // 🛑 PANGGILAN KE TOYYIBPAY
+                
+                // Kita tidak perlu semak lagi kerana nilai telah ditetapkan di atas
+                
+                const amountInCents = Math.round(parseFloat(orderDetails.price) * 100);
+                const redirectURL = `${WEBSITE_BASE_URL}pembayaran.html`;
+                const billDescription = `Tempahan Jubah - ${formData.matricNo}`;
+                
+                const paymentUrl = `https://toyyibpay.com/${TOYYIBPAY_CATEGORY_CODE}?` +
+                                   `billName=${encodeURIComponent(billDescription)}` +
+                                   `&billDescription=${encodeURIComponent(orderDetails.serviceText)}` +
+                                   `&billPriceSetting=1` + 
+                                   `&billAmount=${amountInCents}` +
+                                   `&billTo=${encodeURIComponent(formData.fullName)}` +
+                                   `&billEmail=${encodeURIComponent(formData.matricNo)}@unimas.my` +
+                                   `&billPhone=${encodeURIComponent(formData.phoneNo)}` +
+                                   `&billReturnUrl=${encodeURIComponent(redirectURL)}` +
+                                   `&billCallbackUrl=${encodeURIComponent(redirectURL)}`; 
+                                   
+                window.location.href = paymentUrl;
+
+            } else if (!formData || !orderDetails) {
+                alert("Ralat data: Maklumat servis dan borang hilang. Sila kembali ke halaman sebelumnya.");
+            } else {
+                alert("Sila sahkan semua maklumat sebelum meneruskan.");
             }
         });
     }
 
-    // ===============================================
-    // LOGIK UNTUK HALAMAN 5: PEMBAYARAN
-    // ===============================================
+    // ===========================================================
+    // LOGIK UNTUK HALAMAN 5: PEMBAYARAN (Menerima status ToyyibPay)
+    // ===========================================================
     if (document.querySelector('.payment-container')) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const status = urlParams.get('status'); 
         const loadingSection = document.getElementById('loading-section');
         const successSection = document.getElementById('success-section');
+        const failureSection = document.getElementById('failure-section'); 
+
+        // Sembunyikan semua dahulu
+        if (loadingSection) loadingSection.style.display = 'none';
+        if (successSection) successSection.style.display = 'none';
+        if (failureSection) failureSection.style.display = 'none';
         
-        // Simulasi proses pembayaran
-        setTimeout(() => {
-            loadingSection.style.display = 'none';
-            successSection.style.display = 'block';
+        if (status === '1') {
+            // Status 1 = Berjaya
+            if (successSection) successSection.style.display = 'block';
             
+            // Konfeti hanya jika berjaya
             if (typeof confetti === 'function') {
                 const myCanvas = document.getElementById('confetti-canvas');
                 const myConfetti = confetti.create(myCanvas, {
@@ -233,8 +269,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     origin: { y: 0.6 }
                 });
             }
-
-        }, 3000); // Tunggu 3 saat
+            // Lakukan kemaskini status Firebase di sini jika berjaya
+            
+        } else if (status === '2' || status === '3') {
+            // Status 2 = Gagal, Status 3 = Dibatalkan
+            if (failureSection) failureSection.style.display = 'block';
+        } else {
+            // Jika tiada status dalam URL, paparkan loading simulasi
+            if (loadingSection) loadingSection.style.display = 'block';
+            
+            // Simulasi proses pembayaran jika diakses terus
+            setTimeout(() => {
+                if (loadingSection) loadingSection.style.display = 'none';
+                if (successSection) successSection.style.display = 'block'; 
+            }, 3000); 
+        }
 
         // Logik untuk muat turun resit PDF
         document.getElementById('download-receipt').addEventListener('click', () => {
@@ -264,7 +313,7 @@ document.addEventListener('DOMContentLoaded', function() {
             doc.text("No. Transaksi:", 20, 52);
             doc.text(`TYP-${Date.now().toString().slice(-6)}`, 80, 52);
             doc.text("Kaedah Bayaran:", 20, 59);
-            doc.text("FPX (Simulasi)", 80, 59);
+            doc.text("FPX (ToyyibPay)", 80, 59);
 
             doc.line(20, 66, 190, 66);
 
@@ -278,39 +327,42 @@ document.addEventListener('DOMContentLoaded', function() {
             doc.text(formData ? formData.fullName : 'N/A', 80, 85);
             doc.text("No. Matrik:", 20, 92);
             doc.text(formData ? formData.matricNo : 'N/A', 80, 92);
-             doc.text("No. Telefon:", 20, 99);
+            doc.text("No. Telefon:", 20, 99);
             doc.text(formData ? formData.phoneNo : 'N/A', 80, 99);
+            doc.text("Fakulti:", 20, 106);
+            doc.text(formData ? formData.fakulti : 'N/A', 80, 106);
 
-            doc.line(20, 106, 190, 106);
+
+            doc.line(20, 113, 190, 113);
             
             // Servis Dipilih
             doc.setFontSize(14);
             doc.setTextColor('#0b132b');
-            doc.text("Servis Dipilih", 20, 116);
+            doc.text("Servis Dipilih", 20, 123);
             doc.setFontSize(12);
             doc.setTextColor('#333');
-            doc.text(orderDetails ? `> ${orderDetails.serviceText}` : "Tiada servis dipilih", 20, 125);
+            doc.text(orderDetails ? `> ${orderDetails.serviceText}` : "Tiada servis dipilih", 20, 132);
 
             // Total
             doc.setFontSize(14);
             doc.setFont(undefined, 'bold');
             doc.setTextColor('#0b132b');
-            doc.text("Jumlah Bayaran:", 20, 140);
-            doc.text(orderDetails ? `RM${parseFloat(orderDetails.price).toFixed(2)}` : "RM0.00", 190, 140, null, null, "right");
-            doc.text("Status Pembayaran:", 20, 147);
+            doc.text("Jumlah Bayaran:", 20, 147);
+            doc.text(orderDetails ? `RM${parseFloat(orderDetails.price).toFixed(2)}` : "RM0.00", 190, 147, null, null, "right");
+            doc.text("Status Pembayaran:", 20, 154);
             doc.setTextColor('#28a745');
-            doc.text("BERJAYA", 190, 147, null, null, "right");
+            doc.text("BERJAYA", 190, 154, null, null, "right");
             
             doc.setFont(undefined, 'normal');
 
-            doc.line(20, 155, 190, 155);
+            doc.line(20, 162, 190, 162);
 
             // Mesej Penutup
             doc.setFontSize(10);
             doc.setTextColor('#555');
-            doc.text("Syabas dan tahniah kepada para graduan.", 105, 165, null, null, "center");
-            doc.text("Terima kasih kerana menggunakan servis kami.", 105, 170, null, null, "center");
-            doc.text("Semoga hari konvokesyen anda penuh makna 🎓✨", 105, 175, null, null, "center");
+            doc.text("Syabas dan tahniah kepada para graduan.", 105, 172, null, null, "center");
+            doc.text("Terima kasih kerana menggunakan servis kami.", 105, 177, null, null, "center");
+            doc.text("Semoga hari konvokesyen anda penuh makna 🎓✨", 105, 182, null, null, "center");
 
             // Footer Resit
             doc.setDrawColor('#ffd700');
